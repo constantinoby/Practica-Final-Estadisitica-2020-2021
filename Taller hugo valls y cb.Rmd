@@ -1,0 +1,258 @@
+---
+title: "Practica Mayo"
+author: "Hugo Valls y Constantino Byelov"
+date: "24/4/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Práctica Ordenador 1
+
+### Enunciado
+
+La práctica consiste en la obtención de los datos de una ciudad asignada, en nuestro caso Malta, conseguimos el listings.csv (archivo excel donde sus valores están separados por comas) de febrero de 2021 el cual se puede descargar en la página de Airbnb. Con este listing tenemos que hacer diferentes cosas que iremos explicando a continuación, de todas las variables y columnas que había en el listing original se crea un listing más corto donde se escogen 10 columnas, 7 de ellas numéricas y 3 no numéricas, en nuestro caso tenemos la siguiente tabla.
+
+```{r Inicio ex1}
+library(knitr)
+library(dplyr)
+
+rawd <- read.csv("listings.csv")
+rawdata=rawd[, c("name", "neighbourhood","room_type", "price", "bedrooms", "beds", "accommodates", "minimum_nights", "maximum_nights", "number_of_reviews")]
+
+rawdata <- setNames(rawdata, c("Nombre", "Vecindario","TipoHab","Precio","Dormitorios","Camas","Acomodaciones","NochesMin","NochesMax","NumeroReviews"))
+
+
+kable(head(rawdata,5))
+
+rawdata$PrecioS = as.numeric(gsub("[\\$,]", "", rawdata$Precio))
+
+rawnum=rawdata[,c("PrecioS","Dormitorios","Camas","Acomodaciones","NochesMin","NochesMax","NumeroReviews")]
+
+```
+
+Para las variables numéricas hacemos una tabla donde calculamos la cantidad de valores no válidos, el mínimo, el máximo, la media, la variancia, los cuantiles y la mediana.
+
+```{r}
+
+calculos1=function(x) 
+{
+  N=as.numeric(table(!is.na(x))["TRUE"])
+  NAs=length(x)-N
+  
+  return(c(Media=mean(x),Varianza=var(x),
+           Q1=quantile(x,0.25),Q3=quantile(x,0.75),Mediana=median(x),
+           Max=max(x),Min=min(x)))
+}
+
+```
+
+Los valores de NA que podemos encontrar durante todo el dataframe son los siguientes:
+
+```{r}
+apply(is.na(rawnum), 2, sum)
+```
+
+Los valores estadísiticos de las variables numéricas son:
+
+```{r Tabla ex3}
+rawdata <- mutate_if(rawdata, is.numeric, ~replace(., is.na(.), 0))
+
+aux=apply(rawdata[,5:11],2,calculos1)
+
+knitr::kable(t(round(aux,2)),digits = 2,aling="c",caption="Estadísticas necesarias")
+
+
+         
+```
+
+Las tablas de frecuencia absolutas para las variables no numéricas son:
+
+```{r ex4}
+tabla1= table(rawdata$Nombre)
+barplot(head(sort(tabla1,decreasing=TRUE),25),col=8,las=2,cex.names = 0.6,
+ylim=c(0,40),ylab="Número de propiedades",main= "Numero de propiedades diversas o parecidas por descripción")
+
+```
+
+```{r}
+tabla2= table(rawdata$Vecindario)
+barplot(head(sort(tabla2,decreasing=TRUE),25),col=8,las=2,cex.names = 0.8,
+ylim=c(0,3500),ylab="Número de propiedades de un vecindario",main= "Propiedades ubicadas en el mismo vecindario")
+
+```
+
+```{r}
+tabla3= table(rawdata$TipoHab)
+barplot(head(sort(tabla3,decreasing=TRUE),25),col=8,las=2,cex.names = 0.6,
+ylim=c(0,6000),ylab="Número de tipo de habitaciones",main= "Numero de tipos de habitaciones")
+```
+
+Ahora hacemos todos los boxplots y histrogramas de todas las variables numéricas, mostrando dos variables en un mismo boxplot o histograma.
+
+```{r ex 5}
+boxplot(rawnum$PrecioS~rawnum$NumeroReviews,las=2,xlab="Numero de reviews",ylab="Precio segun número de reviews",col="aquamarine2",ylim=c(0,150))
+
+```
+
+```{r}
+boxplot(rawnum$Dormitorios~rawnum$Camas,las=2,xlab="Número de camas",ylab="Número de camas según el dormitorio",col="aquamarine2")
+```
+
+```{r}
+boxplot(rawnum$Acomodaciones~rawnum$Dormitorios,las=2,xlab="Número de dormitorios",ylab="Número dormitorios según las acomodaciones",col="aquamarine2")
+```
+
+```{r}
+boxplot(rawnum$NochesMax~rawnum$NochesMin,las=2,xlab="Número de noches máximas para coger",ylab="Número de noches máximas según las minimas",col="aquamarine2")
+```
+
+```{r}
+hist(rawnum$PrecioS,freq=TRUE,main = "Histograma del precio",xlab = "Precio", ylab = "Frecuencia",col="ivory")
+```
+
+```{r}
+hist(rawnum$Dormitorios,freq=TRUE,main = " Histograma de los dormitorios",xlab = "Dormitoios", ylab = "Frecuencia",col="ivory")
+```
+
+```{r}
+hist(rawnum$Camas,freq=TRUE,main = " Histograma de las camas",xlab = "Camas", ylab = "Frecuencia",col="ivory")
+```
+
+```{r}
+hist(rawnum$Acomodaciones,freq=TRUE,main = " Histograma de las acomodaciones",xlab = "Acomodaciones", ylab = "Frecuencia",col="ivory")
+```
+
+```{r}
+hist(rawnum$NochesMax,freq=TRUE,main = " Histograma de las noches máximas",xlab = "Noches Máximas", ylab = "Frecuencia",col="ivory")
+```
+
+```{r}
+hist(rawnum$NochesMin,freq=TRUE,main = " Histograma de las noches mínimas",xlab = "Noches Mínimas", ylab = "Frecuencia",col="ivory")
+```
+
+```{r}
+hist(rawnum$NumeroReviews,freq=TRUE,main = " Histograma del número de reviews",xlab = "Número Reviews", ylab = "Frecuencia",col="ivory")
+```
+
+Hacemos un diagrama de tarta para la variable no numérica "TipoHab", dónde podemos ver el porcentaje de frecuencia de cada habitación.
+
+```{r ex6}
+FAbs=table(rawdata$TipoHab)
+P=round(100.0*prop.table(FAbs),digits = 2)
+pie(P, labels = paste0(P, "%"))
+legend("left", legend = c("Entire Home/Aprt", "Hotel Room", "Private Room", "Shared Room"),fill =  c("white", "lightblue", "mistyrose", 69))
+```
+
+El valor medio del precio según el barrio ordenado de mayor a menor es:
+
+```{r ex7}
+data2=data.frame(Precio2=rawnum$PrecioS,Barrio=rawdata$Vecindario)
+
+data2=data2[ data2$Barrio != "" | data2$Barrio != "N/A",]
+
+tabla_precios_barrio=aggregate(data2$Precio2~data2$Barrio,FUN=mean, na.action = na.omit )
+
+names(tabla_precios_barrio)=c("Vecindario","PrecioMedio")
+
+tabla_precios_barrio=tabla_precios_barrio[order (tabla_precios_barrio$PrecioMedio,decreasing=TRUE),]
+
+x=(tabla_precios_barrio$PrecioMedio)
+
+mean(x)
+```
+
+Dibujamos un boxplot para la variable Precio, dónde salen los 4 barrios más caros y los 4 más baratos.
+
+```{r ex8 p1}
+tabla_precios_medios=aggregate(PrecioS~Vecindario,data=rawdata,FUN=function(x) mean(x,na.rm=TRUE))
+
+tabla_precios_medios=na.omit(tabla_precios_medios[order(tabla_precios_medios$PrecioS),])
+
+cinco_caros=tabla_precios_barrio$Vecindario[1:4]
+n=dim(tabla_precios_barrio)[1]
+cinco_baratos=tabla_precios_barrio$Vecindario[504:507]
+```
+
+```{r ex8 p2}
+dos_precios=na.omit(rawdata[rawdata$Vecindario %in% c(cinco_baratos,cinco_caros),c("Precio","Vecindario")])
+
+dos_precios$caro=factor(dos_precios$Vecindario %in% cinco_caros,labels = c("Barato, Caro"))
+dos_precios$PrecioS= as.numeric(gsub("[\\$,]", "", dos_precios$Precio))
+boxplot(dos_precios$PrecioS~dos_precios$caro,xlab="Variables",ylab="Precio",col="aquamarine2")
+
+```
+
+Dibujamos los diagramas de dispersión dos a dos, con colores diferentes para cada barrio.
+
+```{r ex9}
+
+par(mfrow=c(1,1))
+plot(rawdata$PrecioS,rawdata$NochesMax, main = "Diagramas de dispersión precio y noches máximas",
+      pch = 21, bg = rainbow(n)[factor(rawdata$Vecindario)],xlab="NochesMax",ylab="Precio")
+
+plot(rawdata$PrecioS,rawdata$NochesMin, main = "Diagramas de dispersión precio y noches minimas",
+      pch = 21, bg = rainbow(n)[factor(rawdata$Vecindario)],xlab="NochesMin",ylab="Precio")
+
+plot(rawdata$PrecioS,rawdata$NumeroReviews, main = "Diagramas de dispersión precio y número de reviews ",
+      pch = 21, bg = rainbow(n)[factor(rawdata$Vecindario)],xlab="NumeroReviews",ylab="Precio")
+
+par(mfrow=c(1,1))
+```
+
+El coefiente de correlación del precio con la noches máximas:
+
+```{r ex10}
+cor(rawdata$PrecioS,rawdata$NochesMax)
+```
+
+En cuanto a las noches mínimas:
+
+```{r}
+cor(rawdata$PrecioS,rawdata$NochesMin)
+```
+
+Para acabar, para el número de reviews:
+
+```{r}
+cor(rawdata$PrecioS,rawdata$NumeroReviews)
+```
+
+Ahora organizamos 2 variables numéricas, en nuestro caso "Dormitorios" y "Acomodaciones" en 5 intervalos.
+
+Teniendo en cuenta que el intervalo esta cerrado por una parte solo hay que tener el cuenta el número del intervalo cerrado, ya que son numeros naturales. Además para poder definir el último número hemos apliado en 1 el último intervalo, ya que al ser abierto no incluia el último número.
+
+```{r ex11}
+tabla4= table(cut(rawdata$Dormitorios, breaks = c(0,1,2,3,4,13), right=FALSE))
+barplot(head(sort(tabla4,decreasing=TRUE),25),col=8,las=1,cex.names = 0.6,
+ylim=c(0,6000),ylab="Número de dormitorios total",main= "Número de dormitorio")
+```
+
+```{r}
+tabla5= table(cut(rawdata$Acomodaciones, breaks = c(1,2,3,4,5,16), right=FALSE))
+barplot(head(sort(tabla5,decreasing=TRUE),25),col=8,las=1,cex.names = 0.6,
+ylim=c(0,3000),ylab="Número de acomodaciones total",main= "Número de acomodaciones")
+```
+
+Tabla de contiengéncia para las dos tablas con intervalos:
+
+```{r ex12 p1}
+rawnum <- mutate_if(rawdata, is.numeric, ~replace(., is.na(.), 0))
+
+table <- table(tabla4,tabla5, dnn = c("Dormitorios","Acomodaciones"))
+
+
+prop.table(table)
+
+
+```
+
+Diagrama de mosaico asociado a la tabala de contiengéncia:
+
+```{r ex12 p2}
+mosaicplot(table, main="Mosaico de la tabla de contingéncia",las= 1, color="aquamarine2")
+```
