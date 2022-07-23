@@ -1,2 +1,2 @@
-# Practica-Final-Estadisitica-2020-2021
-Práctica final de Estadisitica 2020-2021
+# Practica Final Estadisitica 2020-2021
+Hecho por Hugo Valls Sabater y Constantino Byelov Serdiuk
